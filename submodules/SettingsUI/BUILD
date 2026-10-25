@@ -81,6 +81,7 @@ swift_library(
         "//submodules/InstantPageCache:InstantPageCache",
         "//submodules/AppBundle:AppBundle",
         "//submodules/ContextUI:ContextUI",
+        "//submodules/KUpergramExtras:KUpergramExtras",
         "//submodules/Markdown:Markdown",
         "//submodules/UndoUI:UndoUI",
         "//submodules/DeleteChatPeerActionSheetItem:DeleteChatPeerActionSheetItem",
