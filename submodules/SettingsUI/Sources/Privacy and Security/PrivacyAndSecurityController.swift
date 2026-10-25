@@ -22,6 +22,7 @@ import AuthenticationServices
 import ChatTimerScreen
 import PasskeysScreen
 import ContextUI
+import KUpergramExtras
 
 private final class PrivacyAndSecurityControllerArguments {
     let account: Account
@@ -48,8 +49,9 @@ private final class PrivacyAndSecurityControllerArguments {
     let openEmailSettings: (String?) -> Void
     let openMessagePrivacy: () -> Void
     let openGiftsPrivacy: () -> Void
-    
-    init(account: Account, openBlockedUsers: @escaping () -> Void, openLastSeenPrivacy: @escaping () -> Void, openGroupsPrivacy: @escaping () -> Void, openVoiceCallPrivacy: @escaping () -> Void, openProfilePhotoPrivacy: @escaping () -> Void, openForwardPrivacy: @escaping () -> Void, openPhoneNumberPrivacy: @escaping () -> Void, openVoiceMessagePrivacy: @escaping () -> Void, openBioPrivacy: @escaping () -> Void, openBirthdayPrivacy: @escaping () -> Void, openSavedMusicPrivacy: @escaping () -> Void, openPasscode: @escaping () -> Void, openTwoStepVerification: @escaping (TwoStepVerificationAccessConfiguration?) -> Void, openPasskeys: @escaping () -> Void, openActiveSessions: @escaping () -> Void, toggleArchiveAndMuteNonContacts: @escaping (Bool) -> Void, setupAccountAutoremove: @escaping () -> Void, setupMessageAutoremove: @escaping () -> Void, openDataSettings: @escaping () -> Void, openBrowserSelection: @escaping () -> Void, openEmailSettings: @escaping (String?) -> Void, openMessagePrivacy: @escaping () -> Void, openGiftsPrivacy: @escaping () -> Void) {
+    let openKupergram: () -> Void
+
+    init(account: Account, openBlockedUsers: @escaping () -> Void, openLastSeenPrivacy: @escaping () -> Void, openGroupsPrivacy: @escaping () -> Void, openVoiceCallPrivacy: @escaping () -> Void, openProfilePhotoPrivacy: @escaping () -> Void, openForwardPrivacy: @escaping () -> Void, openPhoneNumberPrivacy: @escaping () -> Void, openVoiceMessagePrivacy: @escaping () -> Void, openBioPrivacy: @escaping () -> Void, openBirthdayPrivacy: @escaping () -> Void, openSavedMusicPrivacy: @escaping () -> Void, openPasscode: @escaping () -> Void, openTwoStepVerification: @escaping (TwoStepVerificationAccessConfiguration?) -> Void, openPasskeys: @escaping () -> Void, openActiveSessions: @escaping () -> Void, toggleArchiveAndMuteNonContacts: @escaping (Bool) -> Void, setupAccountAutoremove: @escaping () -> Void, setupMessageAutoremove: @escaping () -> Void, openDataSettings: @escaping () -> Void, openBrowserSelection: @escaping () -> Void, openEmailSettings: @escaping (String?) -> Void, openMessagePrivacy: @escaping () -> Void, openGiftsPrivacy: @escaping () -> Void, openKupergram: @escaping () -> Void) {
         self.account = account
         self.openBlockedUsers = openBlockedUsers
         self.openLastSeenPrivacy = openLastSeenPrivacy
@@ -74,6 +76,7 @@ private final class PrivacyAndSecurityControllerArguments {
         self.openEmailSettings = openEmailSettings
         self.openMessagePrivacy = openMessagePrivacy
         self.openGiftsPrivacy = openGiftsPrivacy
+        self.openKupergram = openKupergram
     }
 }
 
@@ -136,10 +139,11 @@ private enum PrivacyAndSecurityEntry: ItemListNodeEntry {
     case dataSettings(PresentationTheme, String)
     case dataSettingsInfo(PresentationTheme, String)
     case openLinksIn(PresentationTheme, String, String)
-    
+    case kupergram(PresentationTheme, String)
+
     var section: ItemListSectionId {
         switch self {
-        case .blockedPeers, .activeSessions, .passcode, .twoStepVerification, .passkeys, .messageAutoremoveTimeout, .messageAutoremoveInfo:
+        case .kupergram, .blockedPeers, .activeSessions, .passcode, .twoStepVerification, .passkeys, .messageAutoremoveTimeout, .messageAutoremoveInfo:
             return PrivacyAndSecuritySection.general.rawValue
         case .loginEmail, .loginEmailInfo:
             return PrivacyAndSecuritySection.loginEmail.rawValue
@@ -158,6 +162,8 @@ private enum PrivacyAndSecurityEntry: ItemListNodeEntry {
     
     var stableId: Int32 {
         switch self {
+            case .kupergram:
+                return 0
             case .blockedPeers:
                 return 1
             case .activeSessions:
@@ -231,6 +237,12 @@ private enum PrivacyAndSecurityEntry: ItemListNodeEntry {
         switch lhs {
             case let .privacyHeader(lhsTheme, lhsText):
                 if case let .privacyHeader(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
+                    return true
+                } else {
+                    return false
+                }
+            case let .kupergram(lhsTheme, lhsText):
+                if case let .kupergram(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
                     return true
                 } else {
                     return false
@@ -439,6 +451,10 @@ private enum PrivacyAndSecurityEntry: ItemListNodeEntry {
         switch self {
             case let .privacyHeader(_, text):
                 return ItemListSectionHeaderItem(presentationData: presentationData, text: text, sectionId: self.section)
+            case let .kupergram(_, text):
+                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, title: text, label: "", sectionId: self.section, style: .blocks, action: {
+                    arguments.openKupergram()
+                })
             case let .blockedPeers(_, text, value):
                 return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.block, title: text, label: value, sectionId: self.section, style: .blocks, action: {
                     arguments.openBlockedUsers()
@@ -665,6 +681,7 @@ private func privacyAndSecurityControllerEntries(
 ) -> [PrivacyAndSecurityEntry] {
     var entries: [PrivacyAndSecurityEntry] = []
     
+    entries.append(.kupergram(presentationData.theme, "Kupergram"))
     entries.append(.blockedPeers(presentationData.theme, presentationData.strings.Settings_BlockedUsers, blockedPeerCount == nil ? "" : (blockedPeerCount == 0 ? presentationData.strings.PrivacySettings_BlockedPeersEmpty : "\(blockedPeerCount!)")))
     if activeWebsitesCount != 0 {
         entries.append(.activeSessions(presentationData.theme, presentationData.strings.PrivacySettings_WebSessions, activeWebsitesCount == 0 ? "" : "\(activeWebsitesCount)"))
@@ -844,6 +861,37 @@ class PrivacyAndSecurityControllerImpl: ItemListController, ASAuthorizationContr
     @available(iOS 13.0, *)
     public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         return self.view.window!
+    }
+}
+
+private final class KUpergramContainerController: ViewController {
+    private var child: UIViewController?
+
+    init(context: AccountContext, title: String) {
+        let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+        super.init(navigationBarPresentationData: NavigationBarPresentationData(presentationData: presentationData))
+        self.title = title
+    }
+
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadDisplayNode() {
+        self.displayNode = ViewControllerTracingNode()
+        self.displayNode.backgroundColor = .white
+
+        let child = KUpergramEntry.makeViewController()
+        self.child = child
+        self.addChild(child)
+        self.displayNode.view.addSubview(child.view)
+        child.didMove(toParent: self)
+    }
+
+    override func containerLayoutUpdated(_ layout: ContainerViewLayout, transition: ContainedViewLayoutTransition) {
+        super.containerLayoutUpdated(layout, transition: transition)
+        let topInset = (layout.statusBarHeight ?? 20.0) + 44.0
+        self.child?.view.frame = CGRect(x: 0.0, y: topInset, width: layout.size.width, height: max(0.0, layout.size.height - topInset))
     }
 }
 
@@ -1556,8 +1604,10 @@ public func privacyAndSecurityController(
                 }), true)
             }
         }))
+    }, openKupergram: {
+        pushControllerImpl?(KUpergramContainerController(context: context, title: "Kupergram"), true)
     })
-    
+
     actionsDisposable.add(context.engine.peers.managedUpdatedRecentPeers().start())
 
     actionsDisposable.add((privacySettingsPromise.get()
